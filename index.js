@@ -25,9 +25,7 @@ nbTrainedSet = undefined;
  * @returns {[featureMatrix, labelVector]} array of your result data 
  */
 function readToMatrixAndVector(filePath, options={ skipHeader: true, delimiter: ',', encoding: 'utf8' }) {
-    let fileLines = fs.readFileSync(filePath, { encoding: options.encoding })
-                        .split('\n');
-    
+    let fileLines = fs.readFileSync(filePath, { encoding: options.encoding }).split('\n');
 
     let labelVector = [];
     let featureMatrix = [];
@@ -39,6 +37,10 @@ function readToMatrixAndVector(filePath, options={ skipHeader: true, delimiter: 
         for (let feat = 0; feat < features.length; feat++) {
             if (!isNaN(features[feat])) // if number
                 features[feat] = Number(features[feat]);
+            else if (String(features[feat].toLowerCase()) == 'true') // true
+                features[feat] = true;
+            else if (String(features[feat].toLowerCase()) == 'false') // false
+                features[feat] = false;
             else // if string
                 features[feat] = features[feat].trim();
         }
@@ -49,6 +51,13 @@ function readToMatrixAndVector(filePath, options={ skipHeader: true, delimiter: 
     return [featureMatrix, labelVector];
 }
 
+/**
+ * Calculates the accuracy given the algorithm of your choices output 
+ * and the known results of the true classifications
+ * 
+ * @param {[]} classifications classifications received by algorithm
+ * @param {[]} classifiedSet already known classifications
+ */
 function getAccuracy(classifications, classifiedSet) {
     let correct = [0, 0];
     for (let _class = 0; _class < classifications.length; _class++) {
@@ -159,7 +168,7 @@ function naiveBayes(data, options={}) {
     let classes = Object.keys(classTable);
     classes.splice(classes.indexOf('total'), 1); // gets rid of total from the keys
     let featTables = nbTrainedSet[0];
- 
+
     let classifications = []; // all classifications of vectors in test matrix
     let probs = []; // probs of all classes for each vector in test matrix
     for (let v = 0; v < data.length; v++) { // loops through vectors of matrix
