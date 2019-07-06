@@ -1,0 +1,16 @@
+{
+  "name": "@sf/aijs",
+  "version": "1.0.0",
+  "description": "AI algorithms module",
+  "main": "index.js",
+  "scripts": {
+    "test": "test.js"
+  },
+  "keywords": [
+    "ai",
+    "aijs",
+    "sf"
+  ],
+  "author": "Steven Freed",
+  "license": "MIT"
+}

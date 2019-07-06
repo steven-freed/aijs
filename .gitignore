@@ -1,0 +1,6 @@
+*.vscode
+*.settings
+*.csv
+/test
+package-lock.json
+*.swp
