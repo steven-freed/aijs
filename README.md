@@ -43,7 +43,7 @@ Classifies a matrix of feature vectors
 Trains the algorithm
 @param {[[]]} featMatrix feature matrix of training data
 @param {[]} labelVector class labels vector
-@param {options={ epochs: 100 }} options optional epochs parameter, 100 by default
+@param {{ epochs: 100 }} options optional epochs parameter, 100 by default
 ```
 
 2. classify
@@ -57,12 +57,11 @@ Classifies a matrix of feature vectors
 ```
 Reads a delimited file synchronously line by line seperating the data into
 the feature matrix and label (classification) vector
- 
 @param {String} filePath path to a delimiter seperated spread sheet
-@param {skipHeader: true, delimiter: ',', encoding: 'utf8'} options skipHeader skips the 
+@param {{skipHeader: true, delimiter: ',', encoding: 'utf8'}} options optional param. skipHeader skips the 
 header of the file, delimiter can be specified if using anything other than a csv, encoding
 can be specified
-@returns {[featureMatrix, labelVector]} array of your result data 
+@returns {Object} 'featMatrix', 'labelVector'
 ```
 
 2. getAccuracy
