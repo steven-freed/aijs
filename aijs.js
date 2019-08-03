@@ -22,32 +22,38 @@ module.exports.Perceptron = function() {
         return score > 0 ? 1 : 0;
     }
 
-    function train(features, labels, options={ epochs: 100 }) {
+    /**
+     * 
+     * @param {*} featMatrix 
+     * @param {*} labelVector 
+     * @param {*} options 
+     */
+    function train(featMatrix, labelVector, options={ epochs: 100 }) {
 
-        classes[1] = labels[0];
+        classes[1] = labelVector[0];
 
         while (options.epochs > 0) {
 
-            for (let i = 0; i < features.length; i++) {
+            for (let i = 0; i < featMatrix.length; i++) {
                 let label = undefined;
 
-                if (labels[i][0] === classes[1][0]) {
+                if (labelVector[i] === classes[1]) {
                     label = 1;
                 } else {
                     label = 0;
-                    classes[0] = labels[i];
+                    classes[0] = labelVector[i];
                 }
 
-                if (features[i].length !== weights.length) {
-                    weights = features[i];
+                if (featMatrix[i].length !== weights.length) {
+                    weights = featMatrix[i];
                     bias = 1;
                 }
-
-                let classification = f(features[i]);
+        
+                let classification = f(featMatrix[i]);
                 if (classification !== label) {
                     let error = label - classification;
                     for (let j = 0; j < weights.length; j++) {
-                        weights[j] += error * features[i][j];
+                        weights[j] += error * featMatrix[i][j];
                     }
                     bias += error;
                 }
@@ -57,11 +63,11 @@ module.exports.Perceptron = function() {
 
     }
 
-    function classify(feature_matrix) {
+    function classify(featMatrix) {
         let classifications = [];
-        for (let i = 0; i < feature_matrix.length; i++) {
-            let res = f(feature_matrix[i]);
-            if (res === 1) {
+        for (let i = 0; i < featMatrix.length; i++) {
+            let res = f(featMatrix[i]);
+            if (res) {
                 classifications.push(classes[1]);
             } else {
                 classifications.push(classes[0]);
@@ -84,28 +90,28 @@ module.exports.NaiveBayes = function() {
 
     let nbTrainedSet = undefined;
 
-    function train(trainingSet, classifiedSet) {
+    function train(featMatrix, labelVector) {
 
         let classTable = {};
         // makes class tables
-        for (let _class of classifiedSet) {
+        for (let _class of labelVector) {
             if (classTable[_class] === undefined) 
                 classTable[_class] = 1;
             else
                 classTable[_class] += 1;
         }
-        classTable['total'] = classifiedSet.length;
+        classTable['total'] = labelVector.length;
     
         let featTable = {};
         // makes feature tables
-        for (let v = 0; v < trainingSet.length; v++) {
-            for (let feat of trainingSet[v]) {
+        for (let v = 0; v < featMatrix.length; v++) {
+            for (let feat of featMatrix[v]) {
                 if (featTable[feat] === undefined) {
                     featTable[feat] = {};
-                    featTable[feat][classifiedSet[v]] = 1;
+                    featTable[feat][labelVector[v]] = 1;
                 } else {
                     
-                    featTable[feat][classifiedSet[v]] += 1;
+                    featTable[feat][labelVector[v]] += 1;
                 }
             }
         }
@@ -113,9 +119,9 @@ module.exports.NaiveBayes = function() {
         nbTrainedSet = [featTable, classTable]; // sets a global trained set variable
     }
 
-    function classify(matrix, options={}) {
+    function classify(featMatrix) {
         
-        let data = parseInput(matrix); // parses all input types to numbers and returns feature matrix
+        let data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
 
         if (!data)
             throw new Error("Parameter 'data' for function 'KNN' could not be parsed to valid data types.");
@@ -175,12 +181,6 @@ module.exports.NaiveBayes = function() {
     };
 };
 
-
-/**
- * 
- * @param {[[]]} data data you wish to be classified
- * @param {{ k: 3 }} options An optional param. k to specify how many neighbors to use
- */
 module.exports.KNN = function() {
 
     let knnTrainedSet = {};
@@ -191,24 +191,29 @@ module.exports.KNN = function() {
      * @param {[[]]} trainingSet    feature matrix of training data
      * @param {[]} classificationVector class labels vector
      */
-    function train(trainingSet, classificationVector) {
+    function train(featMatrix, labelVector) {
 
-        for(let i = 0; i < classificationVector.length; i++) {
+        for(let i = 0; i < labelVector.length; i++) {
 
-            for (let f = 0; f < trainingSet[i].length; f++) {
-                if (typeof(trainingSet[i][f]) == 'string')
-                    trainingSet[i][f] = trainingSet[i][f].hashCode();
+            for (let f = 0; f < featMatrix[i].length; f++) {
+                if (typeof(featMatrix[i][f]) == 'string')
+                    featMatrix[i][f] = featMatrix[i][f].hashCode();
             }
         
-            if (!Object.keys(knnTrainedSet).includes(classificationVector[i][0])) {
-                knnTrainedSet[classificationVector[i]] = [];
+            if (!Object.keys(knnTrainedSet).includes(labelVector[i])) {
+                knnTrainedSet[labelVector[i]] = [];
             }
-            knnTrainedSet[classificationVector[i]].push(trainingSet[i]);
+            knnTrainedSet[labelVector[i]].push(featMatrix[i]);
         } 
     }
     
-    function classify(matrix, options={'k': 3 }) {
-        let data = parseInput(matrix); // parses all input types to numbers and returns feature matrix
+    /**
+     * 
+     * @param {[[]]} matrix data you wish to be classified
+     * @param {{ k: 3 }} options An optional param. k to specify how many neighbors to use
+     */
+    function classify(featMatrix, options={k: 3 }) {
+        let data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
         if (!data)
             throw new Error("Parameter 'data' for function 'KNN' could not be parsed to valid data types.");
         
@@ -304,38 +309,41 @@ module.exports.readFile = function (filePath, options={ skipHeader: true, delimi
             else // if string
                 features[feat] = features[feat].trim();
         }
-        labelVector.push(features.slice(features.length - 1));
+        labelVector.push(features.slice(features.length - 1)[0]);
         featureMatrix.push(features.slice(0, features.length - 1));
     }
 
-    return [featureMatrix, labelVector];
+    return {
+        'featMatrix': featureMatrix, 
+        'labelVector': labelVector
+    };
 }
 
 /**
-     * Parses the feature matrix for KNN algorithm because it requires data to be 
-     * numeric, this function parses strings and booleans to numbers
-     * 
-     * @param {[[]]} data your feature matrix 
-     */
-    function parseInput(data) {
+ * Parses the feature matrix for KNN algorithm because it requires data to be 
+ * numeric, this function parses strings and booleans to numbers
+ * 
+ * @param {[[]]} data your feature matrix 
+ */
+function parseInput(data) {
 
-        let parsedMatrix = [];
-        for (let vector of data) {
-            for (let feat = 0; feat < vector.length; feat++) {
-                if (!isNaN(vector[feat])) // if number
-                    vector[feat] = Number(vector[feat]);
-                else if (vector[feat] === true) // true
-                    vector[feat] = 1;
-                else if (vector[feat] == false) // false
-                    vector[feat] = 0;
-                else // if string
-                    vector[feat] = vector[feat].hashCode();
-            }
-            parsedMatrix.push(vector);
-        }   
-   
-        return parsedMatrix;
-    }
+    let parsedMatrix = [];
+    for (let vector of data) {
+        for (let feat = 0; feat < vector.length; feat++) {
+            if (!isNaN(vector[feat])) // if number
+                vector[feat] = Number(vector[feat]);
+            else if (vector[feat] === true) // true
+                vector[feat] = 1;
+            else if (vector[feat] == false) // false
+                vector[feat] = 0;
+            else // if string
+                vector[feat] = vector[feat].hashCode();
+        }
+        parsedMatrix.push(vector);
+    }   
+
+    return parsedMatrix;
+}
 
 /**
  * Calculates the accuracy given the algorithm of your choices output 
