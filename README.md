@@ -1,7 +1,7 @@
 # aijs
 An AI JavaScript library that makes it simple to; read delimited files, train algorithms with your own training data sets, and pick and choose from some of the most popular AI algorithms known to man.
 
-# Algorithms Supported
+## Algorithms Supported
 ### Classification
 1. K-Nearest Neighbors
 2. Naive Bayes
