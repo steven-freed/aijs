@@ -73,3 +73,32 @@ and the known results of the true classifications
 @param {[]} classifiedSet already known classifications
 @returns {Number} the percentage of accuracy
 ```
+
+## Examples
+
+Perceptron Example
+```
+var aijs = require('../aijs');
+
+// reads from a comma delimited file and returns a feature matrix and label vector
+let {featMatrix, labelVector} = aijs.readFile('data.csv', options={ skipHeader: true, encoding: 'utf8', delimiter: ',' });
+
+// data you want to classify                                          
+var testData = [
+      [4.8, 3.0, 1.4, 0.1], 
+      [5.4, 3.0, 4.5, 1.5], 
+      [4.8, 3.0, 1.4, 0.3] 
+];
+
+// create Perceptron instance
+let perceptron = aijs.Perceptron();
+
+// train your instance
+perceptron.train(featMatrix, labelVector);
+
+// classifies your data and returns a vector of classifications
+let res = perceptron.classify(testData);
+
+// print the results
+console.log('classified as', res);
+```
