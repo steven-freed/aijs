@@ -88,7 +88,7 @@ module.exports.Perceptron = function() {
  */
 module.exports.NaiveBayes = function() {
 
-    let nbTrainedSet = undefined;
+    var trainedSet;
 
     function train(featMatrix, labelVector) {
 
@@ -116,7 +116,7 @@ module.exports.NaiveBayes = function() {
             }
         }
     
-        nbTrainedSet = [featTable, classTable]; // sets a global trained set variable
+        trainedSet = [featTable, classTable]; // sets a global trained set variable
     }
 
     function classify(featMatrix) {
@@ -126,13 +126,13 @@ module.exports.NaiveBayes = function() {
         if (!data)
             throw new Error("Parameter 'data' for function 'KNN' could not be parsed to valid data types.");
 
-        if(nbTrainedSet === undefined)
+        if(trainedSet === undefined)
             throw new Error("Running the 'train' function is required to run before the 'KNN' function.");
 
-        let classTable = nbTrainedSet[1];
+        let classTable = trainedSet[1];
         let classes = Object.keys(classTable);
         classes.splice(classes.indexOf('total'), 1); // gets rid of total from the keys
-        let featTables = nbTrainedSet[0];
+        let featTables = trainedSet[0];
 
         let classifications = []; // all classifications of vectors in test matrix
         let probs = []; // probs of all classes for each vector in test matrix
@@ -183,7 +183,7 @@ module.exports.NaiveBayes = function() {
 
 module.exports.KNN = function() {
 
-    let knnTrainedSet = {};
+    var trainedSet = {};
 
     /**
      * Trains the KNN algorithm by setting a global variable of the trained data
@@ -193,18 +193,20 @@ module.exports.KNN = function() {
      */
     function train(featMatrix, labelVector) {
 
-        for(let i = 0; i < labelVector.length; i++) {
+        const classes = new Set(labelVector);
 
-            for (let f = 0; f < featMatrix[i].length; f++) {
-                if (typeof(featMatrix[i][f]) == 'string')
-                    featMatrix[i][f] = featMatrix[i][f].hashCode();
-            }
-        
-            if (!Object.keys(knnTrainedSet).includes(labelVector[i])) {
-                knnTrainedSet[labelVector[i]] = [];
-            }
-            knnTrainedSet[labelVector[i]].push(featMatrix[i]);
-        } 
+        for (let $class of classes)
+           trainedSet[$class] = [];
+
+        for(let i = 0; i < labelVector.length; i++)
+            trainedSet[labelVector[i]].push(featMatrix[i]);
+    }
+
+    function euclidDist(feat, point) {
+        let sumation = 0
+        for (let dim = 0; dim < feat.length; dim++)
+            sumation += Math.pow(Math.abs(feat[dim] - point[dim]), 2)
+        return Math.pow(sumation, (1/2))
     }
     
     /**
@@ -212,61 +214,53 @@ module.exports.KNN = function() {
      * @param {[[]]} matrix data you wish to be classified
      * @param {{ k: 3 }} options An optional param. k to specify how many neighbors to use
      */
-    function classify(featMatrix, options={k: 3 }) {
-        let data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
+    function classify(featMatrix, options={ k: 3 }) {
+        
+        const data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
         if (!data)
             throw new Error("Parameter 'data' for function 'KNN' could not be parsed to valid data types.");
-        
-        let classifications = []; // final results
-        let kSet = []; // set of k nearest points
-        
-        if(knnTrainedSet === undefined)
+        if (!trainedSet)
             throw new Error("Running the 'train' function is required to run before the 'KNN' function.");
+        if (options.k % 2 == 0)
+            throw new Error("Optional parameter 'k' should be an odd number so that 'KNN' may break ties.")
 
-        for(let d = 0; d < data.length; d++) { // loops all items you want to classify
-            for(let key of Object.keys(knnTrainedSet)) { // loops vectors in training set
-                for (let vector of knnTrainedSet[key]) {
-                    for(let feature of vector) { // loops features in training vector
-                        // calculates euclidean distance between training vectors
-                        // and vectors to be classified
-                        let ed = (function euclideanDistance(feat, pt) { 
-                            let difs = [feat].map((f, index) => Math.abs(f - pt[index])); 
-                            let sqSum = difs.map((d) => Math.pow(d, 2));
-                            return Math.sqrt(sqSum);
-                        })(feature, data[d]);
-                
-                        kSet.push([key, feature, ed]);
-                    }
+        let classifications = []; // final results
+        
+        for (let point of featMatrix) {
+            let kSet = []; // set of k nearest points
+            for (let key in trainedSet) {
+                for (let feat of trainedSet[key]) {
+                    ed = euclidDist(feat, point)
+                    kSet.push([key, feat, ed]) 
                 }
             }
 
-            // sorts the set by euclidean distance and gets the k closest neighbors of testpt
-            kSet.sort((a, b) => a[2] - b[2]);
-            kSet = kSet.slice(0, options.k);
-        
-            // creates the frequency empty dictionary containing { class : frequency }
-            let freqSet = {};
-            for(let i of kSet)
-                freqSet[i[0]] = 0;
+            kSet.sort((a, b) => a[2] > b[2])
+            kSet = kSet.slice(0, options.k)
 
-            // if only one key exists it returns that class
-            if(Object.keys(freqSet) === 1 || Object.keys(freqSet) === options.k)
-                return Object.keys(freqSet)[0];
-            else {
-                for(let i of kSet)
-                    freqSet[i[0]] += 1;
+            let freqSet = {}
+            
+            for (var i of kSet)
+                freqSet[i[0]] = 0
+            
+            if (Object.keys(freqSet).length == 1) {
+                classifications.push(i[0]);
+                continue;
+            } else {
+                for (let i of kSet)
+                    freqSet[i[0]] += 1
+            }
+        
+            let topClass = null
+            for (let c0 in freqSet) {
+                for (let c1 in freqSet) { 
+                    if (freqSet[c0] > freqSet[c1])
+                        topClass = c0
+                }
             }
 
-            // iterates through the frequency dictionary to get the most frequent closest k class
-            let keys = Object.keys(freqSet);
-            let topClass = keys[0];
-            for(let k0 = 0; k0 < keys.length; k0++)
-                for(let k1 = k0 + 1; k1 < keys.length; k1++)
-                    if(freqSet[keys[k0]] >= freqSet[keys[k1]])
-                        topClass = keys[k0];
-        
             classifications.push(topClass);
-        } 
+        }
 
         return classifications;
     }
