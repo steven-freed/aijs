@@ -2,6 +2,7 @@ var fs = require('fs');
  
 module.exports.Perceptron = function() {
 
+    var multiclass = false
     let weights = [];
     let bias = 0;
     let classes = {
@@ -29,6 +30,11 @@ module.exports.Perceptron = function() {
      * @param {*} options 
      */
     function train(featMatrix, labelVector, options={ epochs: 100 }) {
+        multiclass = false
+
+        let labels = new Set(labelVector)
+        if (labels.length > 2)
+            multiclass = true
 
         classes[1] = labelVector[0];
 
@@ -90,7 +96,7 @@ module.exports.NaiveBayes = function() {
 
     var trainedSet;
 
-    function train(featMatrix, labelVector) {
+    var train = function(featMatrix, labelVector) {
 
         let classTable = {};
         // makes class tables
@@ -119,14 +125,14 @@ module.exports.NaiveBayes = function() {
         trainedSet = [featTable, classTable]; // sets a global trained set variable
     }
 
-    function classify(featMatrix) {
+    var classify = function(featMatrix) {
         
         let data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
 
         if (!data)
             throw new Error("Parameter 'data' for function 'KNN' could not be parsed to valid data types.");
 
-        if(trainedSet === undefined)
+        if(!trainedSet)
             throw new Error("Running the 'train' function is required to run before the 'KNN' function.");
 
         let classTable = trainedSet[1];
@@ -191,7 +197,7 @@ module.exports.KNN = function() {
      * @param {[[]]} trainingSet    feature matrix of training data
      * @param {[]} classificationVector class labels vector
      */
-    function train(featMatrix, labelVector) {
+    var train = function(featMatrix, labelVector) {
 
         const classes = new Set(labelVector);
 
@@ -202,7 +208,7 @@ module.exports.KNN = function() {
             trainedSet[labelVector[i]].push(featMatrix[i]);
     }
 
-    function euclidDist(feat, point) {
+    var euclidDist = function(feat, point) {
         let sumation = 0
         for (let dim = 0; dim < feat.length; dim++)
             sumation += Math.pow(Math.abs(feat[dim] - point[dim]), 2)
@@ -214,7 +220,7 @@ module.exports.KNN = function() {
      * @param {[[]]} matrix data you wish to be classified
      * @param {{ k: 3 }} options An optional param. k to specify how many neighbors to use
      */
-    function classify(featMatrix, options={ k: 3 }) {
+    var classify = function(featMatrix, options={ k: 3 }) {
         
         const data = parseInput(featMatrix); // parses all input types to numbers and returns feature matrix
         if (!data)
@@ -251,7 +257,8 @@ module.exports.KNN = function() {
                     freqSet[i[0]] += 1
             }
         
-            let topClass = null
+            // starts with random classification in case tie occurs
+            let topClass = Object.keys(freqSet)[Math.floor(Math.random() * Object.keys(freqSet).length)]
             for (let c0 in freqSet) {
                 for (let c1 in freqSet) { 
                     if (freqSet[c0] > freqSet[c1])
@@ -283,7 +290,7 @@ module.exports.KNN = function() {
  * can be specified
  * @returns {[featureMatrix, labelVector]} array of your result data 
  */
-module.exports.readFile = function (filePath, options={ skipHeader: true, delimiter: ',', encoding: 'utf8' }) {
+module.exports.readFile = function(filePath, options={ skipHeader: true, delimiter: ',', encoding: 'utf8' }) {
     let fileLines = fs.readFileSync(filePath, { encoding: options.encoding }).split('\n');
 
     let labelVector = [];
@@ -346,7 +353,7 @@ function parseInput(data) {
  * @param {[]} classifications classifications received by algorithm
  * @param {[]} classifiedSet already known classifications
  */
-module.exports.getAccuracy = function (classifications, classifiedSet) {
+module.exports.getAccuracy = function(classifications, classifiedSet) {
     let correct = [0, 0];
     for (let _class = 0; _class < classifications.length; _class++) {
         if (classifications[_class] == classifiedSet[_class])
